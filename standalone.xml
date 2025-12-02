@@ -56,7 +56,7 @@
         <management-interfaces>
             <http-interface http-authentication-factory="management-http-authentication" ssl-context="appSecTLSContext" console-enabled="true">
                 <http-upgrade enabled="true" sasl-authentication-factory="management-sasl-authentication"/>
-                <socket-binding http="management-http" />
+                <socket-binding http="management-http"/>
             </http-interface>
         </management-interfaces>
         <access-control provider="simple">
@@ -488,7 +488,18 @@
                 <https-listener name="https" socket-binding="https" ssl-context="appSecTLSContext" enable-http2="true"/>
                 <host name="default-host" alias="localhost">
                     <location name="/" handler="welcome-content"/>
+                    <filter-ref name="hsts" predicate="equals(%p,443)"/>
+                    <filter-ref name="http-to-https" predicate="equals(%p,80)"/>
+                    <filter-ref name="spa-default-router" predicate="true"/>
+                    <filter-ref name="content-type-options" predicate="true"/>
                     <http-invoker http-authentication-factory="application-http-authentication"/>
+                </host>
+                <host name="admin-host" alias="admin.taherboudrigua.me">
+                    <location name="/" handler="admin-content"/>
+                    <filter-ref name="hsts" predicate="equals(%p,443)"/>
+                    <filter-ref name="http-to-https" predicate="equals(%p,80)"/>
+                    <filter-ref name="spa-admin-router" predicate="true"/>
+                    <filter-ref name="cache-control" predicate="true"/>
                 </host>
             </server>
             <servlet-container name="default">
@@ -496,8 +507,17 @@
                 <websockets/>
             </servlet-container>
             <handlers>
-                <file name="welcome-content" path="${jboss.home.dir}/welcome-content"/>
+                <file name="welcome-content" path="/var/www/root"/>
+                <file name="admin-content" path="/var/www/admin"/>
             </handlers>
+            <filters>
+                <response-header name="hsts" header-name="Strict-Transport-Security" header-value="max-age=63072000; includeSubDomains; preload"/>
+                <response-header name="cache-control" header-name="Cache-Control" header-value="private,no-cache"/>
+                <response-header name="content-type-options" header-name="X-Content-Type-Options" header-value="nosniff"/>
+                <error-page name="spa-default-router" code="404" path="/var/www/root/index.html"/>
+                <error-page name="spa-admin-router" code="404" path="/var/www/admin/index.html"/>
+                <rewrite name="http-to-https" target="https://%v%U" redirect="true"/>
+            </filters>
             <application-security-domains>
                 <application-security-domain name="other" security-domain="ApplicationDomain"/>
             </application-security-domains>
