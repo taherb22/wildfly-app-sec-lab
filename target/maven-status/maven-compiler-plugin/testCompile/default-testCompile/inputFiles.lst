@@ -1,0 +1,3 @@
+/home/ubuntu/projects/mbk/app-sec-lab/wildfly-app-sec-lab/src/test/java/xyz/kaaniche/phoenix/iam/IntegrationTests.java
+/home/ubuntu/projects/mbk/app-sec-lab/wildfly-app-sec-lab/src/test/java/xyz/kaaniche/phoenix/iam/security/JwtManagerTest.java
+/home/ubuntu/projects/mbk/app-sec-lab/wildfly-app-sec-lab/src/test/java/xyz/kaaniche/phoenix/iam/security/TestPassword.java

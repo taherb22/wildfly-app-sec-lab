@@ -54,4 +54,17 @@ public class Identity extends SimplePKEntity<Long> implements Principal {
     public void setProvidedScopes(String providedScopes) {
         this.providedScopes = providedScopes;
     }
+
+    @Override
+    public int hashCode() {
+        return username != null ? username.hashCode() : 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Identity identity = (Identity) obj;
+        return username != null ? username.equals(identity.username) : identity.username == null;
+    }
 }

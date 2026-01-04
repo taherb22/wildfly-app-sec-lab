@@ -74,35 +74,30 @@ public abstract class AuthorizationDecorator<E extends RootEntity<ID>,ID extends
 
         @Override
         public boolean implies(java.security.Permission permission) {
-            if(permission instanceof Permission that){
-                return this.getName().equals(that.getName()) && this.type.equals(that.type) && this.id.equals(that.id);
+            if (permission == null || permission.getClass() != Permission.class) {
+                return false;
             }
-            return false;
+            // Cast and compare using inherited getName() and getActions() methods
+            return this.getName().equals(permission.getName()) && 
+                   this.getActions().equals(permission.getActions());
         }
-
         @Override
         public boolean equals(Object obj) {
             if(obj==null){
                 return false;
-            }
-            if(obj instanceof java.security.Permission p){
+            }if(obj instanceof java.security.Permission p){
                 return this.implies(p) && p.implies(this);
             }
             return false;
         }
-
         @Override
         public int hashCode() {
             return 31*Objects.hash(type, id)+getName().hashCode();
-        }
-
-        @Override
+        }@Override
         public String getActions() {
             return null;
         }
-    }
-
-    private enum SecureAction{
+    }   private enum SecureAction{
         SAVE,EDIT,DELETE
     }
 }

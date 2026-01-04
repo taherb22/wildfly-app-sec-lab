@@ -1,0 +1,26 @@
+# Connect to WildFly
+connect
+
+# Try to remove existing datasource (ignore if it doesn't exist)
+try
+    /subsystem=datasources/data-source=PhoenixDS:remove()
+catch
+    echo "PhoenixDS not found, proceeding with creation"
+end-try
+
+# Add H2 datasource for development
+/subsystem=datasources/data-source=PhoenixDS:add( \
+    jndi-name=java:jboss/datasources/PhoenixDS, \
+    driver-name=h2, \
+    connection-url=jdbc:h2:mem:phoenixdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE, \
+    user-name=sa, \
+    password=sa, \
+    use-ccm=true, \
+    max-pool-size=25, \
+    blocking-timeout-wait-millis=5000, \
+    enabled=true \
+)
+
+echo "PhoenixDS datasource configured successfully"
+
+exit
