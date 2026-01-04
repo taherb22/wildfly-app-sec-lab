@@ -307,3 +307,255 @@ Known issues / follow-ups for a production-grade system:
 - Replace H2 with a real DB and migrations (Flyway/Liquibase)
 
 ---
+
+## 14) Recently added files (what they do and how they connect)
+
+This section is a “map” of the files we added/modified recently to get the app building, deploying, and working end-to-end.
+
+### 14.1 Application code (runtime)
+
+#### REST bootstrap
+- **`src/main/java/xyz/kaaniche/phoenix/iam/rest/JaxRsActivator.java`**
+  - **Purpose**: Enables JAX-RS and sets the API base path via `@ApplicationPath("/api")`.
+  - **Effect**: All REST resources are reachable under `/phoenix-iam/api/...`.
+
+#### Authentication endpoints
+- **`src/main/java/xyz/kaaniche/phoenix/iam/rest/AuthResource.java`**
+  - **Purpose**: Public endpoints for registration + login.
+  - **Key behaviors**:
+    - `POST /api/auth/register`: creates user; hashes password; assigns default role `USER`.
+    - `POST /api/auth/login`: verifies password; issues JWT (`token`) on success.
+  - **Dependencies**:
+    - `UserService` for persistence/auth checks
+    - `JwtService` for token generation
+
+#### User endpoints (protected)
+- **`src/main/java/xyz/kaaniche/phoenix/iam/rest/UserResource.java`**
+  - **Purpose**: Protected endpoints for listing/fetching/deleting users.
+  - **Important**: Right now it returns the `User` entity directly, which includes `passwordHash`.
+    - Production approach: return a DTO that excludes secrets.
+
+#### Entity (persistence model)
+- **`src/main/java/xyz/kaaniche/phoenix/iam/entity/User.java`**
+  - **Purpose**: JPA entity mapped to `users` table.
+  - **Highlights**:
+    - `username` and `email` are unique
+    - `passwordHash` stores Argon2 hash (never plaintext)
+    - `roles` stored in a separate join table via `@ElementCollection`
+
+#### Services (business logic)
+- **`src/main/java/xyz/kaaniche/phoenix/iam/service/PasswordService.java`**
+  - **Purpose**: Argon2 hashing + verification.
+  - **Used by**: `UserService.createUser(...)` (hashing) and `UserService.authenticate(...)` (verification).
+
+- **`src/main/java/xyz/kaaniche/phoenix/iam/service/UserService.java`**
+  - **Purpose**: User persistence operations + authentication check.
+  - **Uses**:
+    - `@PersistenceContext EntityManager` for DB access
+    - `@Transactional` on write operations (persist/merge/remove)
+    - `PasswordService` to verify password hashes
+
+- **`src/main/java/xyz/kaaniche/phoenix/iam/service/JwtService.java`**
+  - **Purpose**: JWT creation (HS256 signing) and validation (signature + expiry).
+  - **Config dependency**:
+    - Reads `jwt.secret` and `jwt.expiration.minutes` from MicroProfile Config.
+  - **Why it mattered**: Token generation previously failed because `jwt.secret` resolved to null. The fix was to ensure runtime config exists and/or provide fallback behavior.
+
+- **`src/main/java/xyz/kaaniche/phoenix/iam/service/MqttService.java`** (optional)
+  - **Purpose**: Publishes IAM events to MQTT (if broker is reachable).
+  - **Config**:
+    - `mqtt.broker.url`, `mqtt.client.id`, `mqtt.topic.prefix`
+  - **Lifecycle**:
+    - Connects in `@PostConstruct`
+    - Disconnects in `@PreDestroy`
+  - **Note**: If MQTT broker isn’t running, it logs warnings and continues.
+
+#### Security (request filter)
+- **`src/main/java/xyz/kaaniche/phoenix/iam/security/JwtAuthenticationFilter.java`**
+  - **Purpose**: Protects endpoints by validating `Authorization: Bearer <token>`.
+
+---
+
+## 15) SecureGate IAM Portal — Implementation Plan (per FINAL TECHNICAL SPEC)
+
+This section turns the provided final specification into an actionable engineering plan.
+
+### 15.1 Target product definition (what we are building)
+
+**Name**: SecureGate IAM Portal  
+**Type**: Secure enterprise IAM PWA with Zero Trust + data dissimulation
+
+**Core functions to deliver**
+- OAuth 2.1 Authorization Server + Resource Server validation
+- Token lifecycle: issuance, rotation, revocation; replay protection (`jti`)
+- MFA: TOTP enrollment + verification
+- ABAC policy management (store + evaluate) and enforcement gateway
+- Real-time audit logging + event streaming (WebSocket)
+- Device trust scoring (incremental; start with deterministic signals)
+- Steganographic secure transfer: AES-256-GCM + DCT/LSB embedding
+
+### 15.2 Target deployment topology (3 domains)
+
+1) **iam.yourdomain.me** (Identity Provider + OAuth2.1 AS)
+- WildFly 38.0.1.Final (Preview) + Jakarta EE 11
+- Elytron-based auth mechanisms
+- Token engines:
+  - JWT for OAuth flows (prefer RS256/ES256, strict alg whitelist)
+  - PASETO v4 for internal service-to-service authentication
+- Backing services:
+  - PostgreSQL 16 (multi-tenancy + RLS)
+  - Redis 7.2 (sessions + token replay prevention store)
+  - Vault credential store integration (secrets)
+
+2) **api.yourdomain.me** (Resource Server + ABAC enforcement gateway)
+- JAX-RS APIs + validation filter
+- ABAC decision point / policy evaluation
+- Redis: `jti` tracking, rate limiting, session cache
+- Artemis MQ: async audit/security events distribution
+- mTLS required from iam → api for privileged flows
+
+3) **www.yourdomain.me** (PWA Frontend)
+- Lit 3.x components + Workbox 7.x service worker
+- IndexedDB encryption (WebCrypto) for safe local persistence
+- Real-time channel: WebSocket + SSE fallback
+- CSP3 + SRI + DOMPurify
+
+### 15.3 Security architecture plan (Zero Trust controls)
+
+**Per-request verification**
+- Validate token (PASETO or JWT) with strict alg whitelist and audience checks
+- Bind token to device context:
+  - Start: device_id claim + required header match
+  - Extend: TLS fingerprint, geo/time, behavioral signals
+
+**mTLS micro-segmentation**
+- Separate cert chains for iam/api
+- Client cert pinning for service-to-service requests
+- Rotation policy (e.g., 90 days)
+
+**Token replay prevention**
+- Require `jti` on all access tokens
+- Store `jti` in Redis with TTL matching token expiry
+- Reject duplicates (replay) at api gateway
+
+**Mitigations explicitly required by spec**
+- Algorithm confusion: never accept HS* if using asymmetric verification; whitelist RS256/ES256 only for JWT; reject `none`
+- Restrict WildFly management plane access (localhost/SSH tunnel)
+- Disable EJB remote invocation if not needed (reduce deserialization surface)
+- TLS 1.3 enforcement + HSTS
+
+### 15.4 Data dissimulation (AES-GCM + DCT/LSB) delivery plan
+
+**Module boundary**
+- A dedicated “dissimulation service” inside `api.*` (or a separate internal service) with:
+  - Encrypt: AES-256-GCM (96-bit IV, 128-bit tag)
+  - KDF: PBKDF2-SHA512 (100k + salt) (per spec; consider Argon2id later)
+  - Stego: DCT block transform + embed bits in mid-frequency coefficients
+  - Quality gates: PSNR threshold (≥ 45dB target; reject low PSNR)
+
+**Storage**
+- Cover images managed in MinIO (S3-compatible)
+- Audit exports and policy bundles embedded into cover images
+
+### 15.5 Implementation roadmap (phases & acceptance criteria)
+
+#### Phase 1 — Infrastructure foundation (Weeks 1–2)
+Deliverables:
+- WildFly 38.0.1.Final deployments for iam/api/www (or containers)
+- PostgreSQL 16 cluster + backup strategy
+- Redis 7.2 Sentinel/Cluster
+- Traefik 3.x with TLS 1.3, HSTS preload headers
+- Vault initialized for secrets / cert material
+Acceptance criteria:
+- All three services reachable on correct hosts
+- TLS 1.3 only; TLS 1.2 refused
+- Management endpoints restricted (not publicly reachable)
+
+#### Phase 2 — IAM service (Weeks 3–4)
+Deliverables:
+- OAuth 2.1 authorization server:
+  - PKCE enforced
+  - State validation strong (CSRF-resistant)
+- MFA:
+  - TOTP enrollment (QR) + verification
+- Session store in Redis (sliding expiration)
+- JWT signing keys stored in Vault / Elytron credential store
+Acceptance criteria:
+- Auth code flow with PKCE works end-to-end
+- MFA enrollment + login works
+- Rate limiting in place (e.g., 5 attempts/15 min/IP)
+
+#### Phase 3 — API gateway & ABAC (Weeks 5–6)
+Deliverables:
+- Resource server validation filter:
+  - JWT: RS256/ES256 only; strict `aud` validation
+  - PASETO for internal calls
+- ABAC policy storage + evaluation:
+  - Start with JSON policy model; evolve to visual builder later
+- Token replay prevention:
+  - `jti` required + Redis tracking
+- WebSocket endpoint secured by token
+Acceptance criteria:
+- Requests without valid token denied
+- JWT alg confusion tests fail (rejected)
+- Replay tests fail (duplicate `jti` rejected)
+- ABAC deny/permit decisions logged
+
+#### Phase 4 — Steganography module (Week 7)
+Deliverables:
+- AES-256-GCM encryption service
+- DCT/LSB embed/extract pipeline (OpenCV Java bindings)
+- MinIO integration for cover images
+- PSNR/MSE validation
+Acceptance criteria:
+- Embedding/extraction roundtrip passes
+- PSNR thresholds enforced
+- JPEG compression robustness target met (per spec)
+
+#### Phase 5 — PWA frontend (Weeks 8–9)
+Deliverables:
+- Lit UI, offline queue, background sync
+- Secure storage strategy (no token caching in service worker)
+- CSP nonces, SRI, DOMPurify
+Acceptance criteria:
+- Lighthouse PWA targets met
+- Offline UI does not leak tokens
+- CSP violations monitored
+
+#### Phase 6 — Security hardening (Weeks 10–11)
+Deliverables:
+- ZAP, Dependency-Check, Trivy, SAST gating
+- Algorithm confusion tests, replay tests, SQLi/XSS test suite
+- Observability dashboards (Prometheus/Grafana/Loki)
+Acceptance criteria:
+- No HIGH/CRITICAL CVEs in build artifacts
+- Automated security tests pass
+
+#### Phase 7 — Production deployment (Week 12)
+Deliverables:
+- All go-live checklist items satisfied
+- DR test (RTO/RPO) executed
+Acceptance criteria:
+- Compliance evidence gathered (SOC2/ISO style artifacts)
+- Immutable audit log retention configured
+
+### 15.6 Gap vs current implementation (what exists today)
+
+**Already implemented in this repo (baseline)**
+- Basic user registration + login
+- Argon2 password hashing
+- HS256 JWT generation/validation
+- JAX-RS endpoints and request filter protecting `/api/users`
+- WildFly deployment scripts and datasource wiring for development
+
+**Not yet implemented (required by spec)**
+- OAuth 2.1 authorization server (auth code + PKCE, state binding)
+- PASETO v4 for internal iam ↔ api authentication
+- ABAC policy engine + UI policy builder
+- Redis-backed session store + `jti` replay prevention + rate limiting
+- mTLS between iam and api
+- WebSocket security event streaming + audit pipeline (Artemis, Loki)
+- Steganography module (AES-GCM + DCT/LSB) + MinIO cover image store
+- Production hardening: alg whitelist RS256/ES256, management-plane lockdown, remove EJB remote, WAF, etc.
+
+---
