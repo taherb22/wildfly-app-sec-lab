@@ -20,10 +20,12 @@ import xyz.kaaniche.phoenix.iam.security.JwtManager;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Path("/oauth/token")
 public class TokenEndpoint {
     private final Set<String> supportedGrantTypes = Set.of("authorization_code", "refresh_token");
+    private static final Pattern CODE_VERIFIER_PATTERN = Pattern.compile("^[A-Za-z0-9\\-\\._~]{43,128}$");
 
     @Inject
     private PhoenixIAMRepository phoenixIAMRepository;
@@ -79,9 +81,20 @@ public class TokenEndpoint {
             }
             return Response.ok().build();
         }
+        if (authCode == null || authCode.isEmpty()) {
+            return responseError("invalid_request", "code is required", Response.Status.BAD_REQUEST);
+        }
+        if (codeVerifier == null || codeVerifier.isEmpty()) {
+            return responseError("invalid_request", "code_verifier is required", Response.Status.BAD_REQUEST);
+        }
+        if (!CODE_VERIFIER_PATTERN.matcher(codeVerifier).matches()) {
+            return responseError("invalid_request", "code_verifier must be 43-128 characters from [A-Z a-z 0-9 - . _ ~]", Response.Status.BAD_REQUEST);
+        }
         try {
             AuthorizationCode decoded  = AuthorizationCode.decode(authCode,codeVerifier);
-            assert decoded!=null;
+            if (decoded == null) {
+                return responseError("invalid_grant", "code_verifier does not match code_challenge", Response.Status.BAD_REQUEST);
+            }
             String tenantName = decoded.tenantName();
             String accessToken = jwtManager.generateAccessToken(tenantName, decoded.identityUsername(), decoded.approvedScopes(),phoenixIAMRepository.getRoles(decoded.identityUsername()));
             String refreshToken = jwtManager.generateRefreshToken(tenantName, decoded.identityUsername(), decoded.approvedScopes());

@@ -41,12 +41,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 
 @Path("/")
 @RequestScoped
 public class AuthenticationEndpoint {
     public static final String CHALLENGE_RESPONSE_COOKIE_ID = "signInId";
+    public static final String STATE_COOKIE_ID = "oauthState";
+    private static final Pattern STATE_PATTERN = Pattern.compile("^[A-Za-z0-9\\-\\._~]{16,512}$");
+    private static final Pattern CODE_CHALLENGE_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{43,128}$");
     @Inject
     private Logger logger;
 
@@ -92,16 +96,28 @@ public class AuthenticationEndpoint {
             return informUserAboutError(error);
         }
 
+        String state = params.getFirst("state");
+        if (!isValidState(state)) {
+            return informUserAboutError("invalid_request : state is required and must be 16-512 characters from [A-Z a-z 0-9 - . _ ~]");
+        }
+
         //5. check scope
         String requestedScope = params.getFirst("scope");
         if (requestedScope == null || requestedScope.isEmpty()) {
             requestedScope = tenant.getRequiredScopes();
         }
-        //6. code_challenge_method must be S256
-        String codeChallengeMethod = params.getFirst("code_challenge_method");
-        if(codeChallengeMethod==null || !codeChallengeMethod.equals("S256")){
-            String error = "invalid_grant :" + codeChallengeMethod + ", code_challenge_method must be 'S256'";
-            return informUserAboutError(error);
+
+        if ("code".equals(responseType)) {
+            //6. code_challenge_method must be S256
+            String codeChallengeMethod = params.getFirst("code_challenge_method");
+            if (codeChallengeMethod == null || !codeChallengeMethod.equals("S256")) {
+                String error = "invalid_grant :" + codeChallengeMethod + ", code_challenge_method must be 'S256'";
+                return informUserAboutError(error);
+            }
+            String codeChallenge = params.getFirst("code_challenge");
+            if (!isValidCodeChallenge(codeChallenge)) {
+                return informUserAboutError("invalid_request : code_challenge must be base64url (43-128 chars)");
+            }
         }
         StreamingOutput stream = output -> {
             try (InputStream is = Objects.requireNonNull(getClass().getResource("/login.html")).openStream()){
@@ -110,7 +126,9 @@ public class AuthenticationEndpoint {
         };
         return Response.ok(stream).location(uriInfo.getBaseUri().resolve("/login/authorization"))
                 .cookie(new NewCookie.Builder(CHALLENGE_RESPONSE_COOKIE_ID)
-                .httpOnly(true).secure(true).sameSite(NewCookie.SameSite.STRICT).value(tenant.getName()+"#"+requestedScope+"$"+redirectUri).build()).build();
+                .httpOnly(true).secure(true).sameSite(NewCookie.SameSite.STRICT).value(tenant.getName()+"#"+requestedScope+"$"+redirectUri).build(),
+                        new NewCookie.Builder(STATE_COOKIE_ID)
+                .httpOnly(true).secure(true).sameSite(NewCookie.SameSite.STRICT).value(state).maxAge(300).build()).build();
     }
 
     @POST
@@ -118,23 +136,39 @@ public class AuthenticationEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
     public Response login(@CookieParam(CHALLENGE_RESPONSE_COOKIE_ID) Cookie cookie,
+                          @CookieParam(STATE_COOKIE_ID) Cookie stateCookie,
                           @FormParam("username")String username,
                           @FormParam("password")String password,
                           @Context UriInfo uriInfo) throws Exception {
+        if (cookie == null || cookie.getValue() == null || cookie.getValue().isEmpty()) {
+            return informUserAboutError("invalid_request : missing sign-in context");
+        }
         Identity identity = phoenixIAMRepository.findIdentityByUsername(username);
         if(Argon2Utility.check(identity.getPassword(),password.toCharArray())){
             logger.info("Authenticated identity:"+username);
             MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+            String responseType = params.getFirst("response_type");
+            String state = params.getFirst("state");
+            Response stateError = validateState(state, stateCookie);
+            if (stateError != null) {
+                return stateError;
+            }
+            String codeChallenge = params.getFirst("code_challenge");
+            if ("code".equals(responseType) && !isValidCodeChallenge(codeChallenge)) {
+                return informUserAboutError("invalid_request : code_challenge must be base64url (43-128 chars)");
+            }
             Optional<Grant> grant = phoenixIAMRepository.findGrant(cookie.getValue().split("#")[0],identity.getId());
             if(grant.isPresent()){
                 String redirectURI = buildActualRedirectURI(
-                        cookie.getValue().split("\\$")[1],params.getFirst("response_type"),
+                        cookie.getValue().split("\\$")[1],responseType,
                         cookie.getValue().split("#")[0],
                         username,
                         checkUserScopes(grant.get().getApprovedScopes(),cookie.getValue().split("#")[1].split("\\$")[0])
-                        ,params.getFirst("code_challenge"),params.getFirst("state")
+                        ,codeChallenge,state
                 );
-                return Response.seeOther(UriBuilder.fromUri(redirectURI).build()).build();
+                return Response.seeOther(UriBuilder.fromUri(redirectURI).build())
+                        .cookie(expireStateCookie())
+                        .build();
             }else{
                 StreamingOutput stream = output -> {
                     try (InputStream is = Objects.requireNonNull(getClass().getResource("/consent.html")).openStream()){
@@ -157,15 +191,27 @@ public class AuthenticationEndpoint {
     @Path("/login/authorization")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response grantConsent(@CookieParam(CHALLENGE_RESPONSE_COOKIE_ID) Cookie cookie,
+                                 @CookieParam(STATE_COOKIE_ID) Cookie stateCookie,
                                  @FormParam("approved_scope") String scope,
                                  @FormParam("approval_status") String approvalStatus,
-                                 @FormParam("username") String username){
+                                 @FormParam("username") String username,
+                                 @Context UriInfo uriInfo){
         if ("NO".equals(approvalStatus)) {
             URI location = UriBuilder.fromUri(cookie.getValue().split("\\$")[1])
                     .queryParam("error", "User doesn't approved the request.")
                     .queryParam("error_description", "User doesn't approved the request.")
                     .build();
             return Response.seeOther(location).build();
+        }
+        String state = uriInfo.getQueryParameters().getFirst("state");
+        Response stateError = validateState(state, stateCookie);
+        if (stateError != null) {
+            return stateError;
+        }
+        String responseType = uriInfo.getQueryParameters().getFirst("response_type");
+        String codeChallenge = uriInfo.getQueryParameters().getFirst("code_challenge");
+        if ("code".equals(responseType) && !isValidCodeChallenge(codeChallenge)) {
+            return informUserAboutError("invalid_request : code_challenge must be base64url (43-128 chars)");
         }
         //==> YES
         List<String> approvedScopes = Arrays.stream(scope.split(" ")).toList();
@@ -178,9 +224,11 @@ public class AuthenticationEndpoint {
         }
         try {
             return Response.seeOther(UriBuilder.fromUri(buildActualRedirectURI(
-                    cookie.getValue().split("\\$")[1],null,
-                    cookie.getValue().split("#")[0],username, String.join(" ", approvedScopes), null,null
-            )).build()).build();
+                    cookie.getValue().split("\\$")[1],responseType,
+                    cookie.getValue().split("#")[0],username, String.join(" ", approvedScopes), codeChallenge,state
+            )).build())
+                    .cookie(expireStateCookie())
+                    .build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -197,7 +245,7 @@ public class AuthenticationEndpoint {
             return null;
         }
         if (state != null) {
-            sb.append("&state=").append(state);
+            sb.append("&state=").append(URLEncoder.encode(state, StandardCharsets.UTF_8));
         }
         return sb.toString();
     }
@@ -227,5 +275,31 @@ public class AuthenticationEndpoint {
                 </body>
                 </html>
                 """.formatted(error)).build();
+    }
+
+    private Response validateState(String state, Cookie stateCookie) {
+        if (!isValidState(state)) {
+            return informUserAboutError("invalid_request : state is required and must be 16-512 characters from [A-Z a-z 0-9 - . _ ~]");
+        }
+        if (stateCookie == null || stateCookie.getValue() == null || !state.equals(stateCookie.getValue())) {
+            return informUserAboutError("invalid_request : state mismatch");
+        }
+        return null;
+    }
+
+    private boolean isValidState(String state) {
+        return state != null && STATE_PATTERN.matcher(state).matches();
+    }
+
+    private boolean isValidCodeChallenge(String codeChallenge) {
+        return codeChallenge != null && CODE_CHALLENGE_PATTERN.matcher(codeChallenge).matches();
+    }
+
+    private NewCookie expireStateCookie() {
+        return new NewCookie.Builder(STATE_COOKIE_ID)
+                .value("")
+                .path("/")
+                .maxAge(0)
+                .build();
     }
 }
