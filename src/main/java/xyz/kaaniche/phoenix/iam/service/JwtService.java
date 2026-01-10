@@ -106,16 +106,16 @@ public class JwtService {
         SignedJWT jwt = SignedJWT.parse(token);
 
         if (!jwt.getHeader().getAlgorithm().equals(JWSAlgorithm.RS256)) {
-            throw new JOSEException("Invalid JWT algorithm");
+            throw new JOSEException("Invalid JWT algorithm!!");
         }
 
         if (!jwt.verify(new RSASSAVerifier(publicKey))) {
-            throw new JOSEException("Invalid token signature");
+            throw new JOSEException("Invalid token signature!!");
         }
 
         JWTClaimsSet claims = jwt.getJWTClaimsSet();
         if (claims.getExpirationTime().before(new Date())) {
-            throw new JOSEException("Token expired");
+            throw new JOSEException("Token expired!!");
         }
 
         return claims;
