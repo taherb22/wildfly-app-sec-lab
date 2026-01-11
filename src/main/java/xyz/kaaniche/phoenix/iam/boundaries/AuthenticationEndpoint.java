@@ -2,7 +2,7 @@ package xyz.kaaniche.phoenix.iam.boundaries;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-
+import com.google.common.html.HtmlEscapers;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 
+
 @Path("/")
 @RequestScoped
 public class AuthenticationEndpoint {
@@ -65,11 +66,11 @@ public class AuthenticationEndpoint {
         //1. Check tenant
         String clientId = params.getFirst("client_id");
         if (clientId == null || clientId.isEmpty()) {
-            return informUserAboutError("Invalid client_id :" + clientId);
+            return informUserAboutError("you should provide client_id");
         }
         Tenant tenant = phoenixIAMRepository.findTenantByName(clientId);
         if (tenant == null) {
-            return informUserAboutError("Invalid client_id :" + clientId);
+            return informUserAboutError("Invalid cred");
         }
         //2. Client Authorized Grant Type
         if (tenant.getSupportedGrantTypes() != null && !tenant.getSupportedGrantTypes().contains("authorization_code")) {
@@ -144,8 +145,11 @@ public class AuthenticationEndpoint {
             return informUserAboutError("invalid_request : missing sign-in context");
         }
         Identity identity = phoenixIAMRepository.findIdentityByUsername(username);
-        if(Argon2Utility.check(identity.getPassword(),password.toCharArray())){
-            logger.info("Authenticated identity:"+username);
+        if (identity == null || !Argon2Utility.check(identity.getPassword(), password.toCharArray())) {//check if the identity is Null to prevent server error (prevent NPE)
+        logger.info("Failure when authenticating identity:" + username);
+         return informUserAboutError("User doesn't approved the request."); 
+           }           
+           logger.info("Authenticated identity:"+username);
             MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
             String responseType = params.getFirst("response_type");
             String state = params.getFirst("state");
@@ -177,14 +181,14 @@ public class AuthenticationEndpoint {
                 };
                 return Response.ok(stream).build();
             }
-        } else {
-            logger.info("Failure when authenticating identity:"+username);
-            URI location = UriBuilder.fromUri(cookie.getValue().split("\\$")[1])
-                    .queryParam("error", "User doesn't approved the request.")
-                    .queryParam("error_description", "User doesn't approved the request.")
-                    .build();
-            return Response.seeOther(location).build();
-        }
+        //else {
+        //    logger.info("Failure when authenticating identity:"+username);
+        //    URI location = UriBuilder.fromUri(cookie.getValue().split("\\$")[1])
+        //            .queryParam("error", "User doesn't approved the request.")
+        //            .queryParam("error_description", "User doesn't approved the request.")
+        //            .build();
+        //    return Response.seeOther(location).build();
+        
     }
 
     @PATCH
@@ -261,21 +265,16 @@ public class AuthenticationEndpoint {
     }
 
     private Response informUserAboutError(String error) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8"/>
-                    <title>Error</title>
-                </head>
-                <body>
-                <aside class="container">
-                    <p>%s</p>
-                </aside>
-                </body>
-                </html>
-                """.formatted(error)).build();
-    }
+    String safe = HtmlEscapers.htmlEscaper().escape(error); //  prevent XSS attacks by escaping user-provided content
+    return Response.status(Response.Status.BAD_REQUEST)
+        .entity("""
+            <!DOCTYPE html>
+            <html>
+            <head><meta charset="UTF-8"/><title>Error</title></head>
+            <body><aside class="container"><p>%s</p></aside></body>
+            </html>
+            """.formatted(safe)).build();
+}
 
     private Response validateState(String state, Cookie stateCookie) {
         if (!isValidState(state)) {
