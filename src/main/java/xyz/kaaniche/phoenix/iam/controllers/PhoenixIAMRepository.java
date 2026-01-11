@@ -4,6 +4,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import xyz.kaaniche.phoenix.iam.entities.Grant;
 import xyz.kaaniche.phoenix.iam.entities.Identity;
 import xyz.kaaniche.phoenix.iam.entities.Tenant;
@@ -54,5 +55,10 @@ public class PhoenixIAMRepository {
             }
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Transactional
+    public Identity updateIdentity(Identity identity) {
+        return entityManager.merge(identity);
     }
 }

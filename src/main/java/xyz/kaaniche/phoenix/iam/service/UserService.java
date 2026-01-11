@@ -63,6 +63,11 @@ public class UserService {
         }
     }
 
+    @Transactional
+    public User updateUser(User user) {
+        return em.merge(user);
+    }
+
     public boolean authenticate(String username, String password) {
         return findByUsername(username)
                 .map(user -> user.isEnabled() && passwordService.verifyPassword(user.getPasswordHash(), password))

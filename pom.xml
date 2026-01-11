@@ -52,6 +52,31 @@
             <artifactId>tink</artifactId>
             <version>1.12.0</version>
         </dependency>
+        <!-- Redis client -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>5.1.2</version>
+        </dependency>
+        <!-- Base32 for TOTP secrets -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.16.0</version>
+        </dependency>
+        <!-- QR generation for TOTP enrollment -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <!-- Elytron credential store (provided by WildFly) -->
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron</artifactId>
+            <version>2.4.1.Final</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- SmallRye Config for MicroProfile Config in tests -->
         <dependency>
             <groupId>io.smallrye.config</groupId>

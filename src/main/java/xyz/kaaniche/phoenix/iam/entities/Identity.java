@@ -18,6 +18,10 @@ public class Identity extends SimplePKEntity<Long> implements Principal {
     private Long roles;
     @Column(name = "provided_scopes",nullable = false)
     private String providedScopes;
+    @Column(name = "totp_secret", length = 128)
+    private String totpSecret;
+    @Column(name = "totp_enabled", nullable = false)
+    private boolean totpEnabled = false;
 
     public String getUsername() {
         return username;
@@ -53,6 +57,22 @@ public class Identity extends SimplePKEntity<Long> implements Principal {
 
     public void setProvidedScopes(String providedScopes) {
         this.providedScopes = providedScopes;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
+    }
+
+    public boolean isTotpEnabled() {
+        return totpEnabled;
+    }
+
+    public void setTotpEnabled(boolean totpEnabled) {
+        this.totpEnabled = totpEnabled;
     }
 
     @Override

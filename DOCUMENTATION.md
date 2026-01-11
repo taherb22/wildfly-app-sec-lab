@@ -459,31 +459,44 @@ This section turns the provided final specification into an actionable engineeri
 
 ### 15.5 Implementation roadmap (phases & acceptance criteria)
 
-#### Phase 1 — Infrastructure foundation (Weeks 1–2)
+#### Phase 1 ? Infrastructure foundation (Weeks 1?2)
+Status: Pending (infra not provisioned in this repo)
 Deliverables:
-- WildFly 38.0.1.Final deployments for iam/api/www (or containers)
-- PostgreSQL 16 cluster + backup strategy
-- Redis 7.2 Sentinel/Cluster
-- Traefik 3.x with TLS 1.3, HSTS preload headers
-- Vault initialized for secrets / cert material
+- WildFly 38.0.1.Final deployments for iam/api/www (or containers) (pending; scripts/docs still target 31.x)
+- PostgreSQL 16 cluster + backup strategy (pending; H2 in-memory used for dev)
+- Redis 7.2 Sentinel/Cluster (pending; Redis support is in code but disabled by default)
+- Traefik 3.x with TLS 1.3, HSTS preload headers (pending)
+- Vault initialized for secrets / cert material (pending)
 Acceptance criteria:
 - All three services reachable on correct hosts
 - TLS 1.3 only; TLS 1.2 refused
 - Management endpoints restricted (not publicly reachable)
+Next steps:
+- Provision WildFly 38.0.1.Final and update `install-wildfly.sh`/docs.
+- Replace H2 with PostgreSQL 16 and implement backups; update datasource + `persistence.xml`.
+- Stand up Redis 7.2 Sentinel/Cluster and set `redis.*` config values.
+- Configure Traefik 3.x with TLS 1.3 + HSTS and restrict management endpoints.
+- Initialize Vault and store JWT signing JWK + other secrets.
 
-#### Phase 2 — IAM service (Weeks 3–4)
+#### Phase 2 ? IAM service (Weeks 3?4)
+Status: Implemented in code; requires environment configuration for Redis/Elytron/Vault
 Deliverables:
 - OAuth 2.1 authorization server:
-  - PKCE enforced
-  - State validation strong (CSRF-resistant)
+  - PKCE enforced (implemented)
+  - State validation strong (CSRF-resistant) (implemented)
 - MFA:
-  - TOTP enrollment (QR) + verification
-- Session store in Redis (sliding expiration)
-- JWT signing keys stored in Vault / Elytron credential store
+  - TOTP enrollment (QR) + verification (implemented; `/api/auth/mfa/*` and `/api/mfa/*`)
+- Session store in Redis (sliding expiration) (implemented; enable via `session.store=redis`)
+- JWT signing keys stored in Vault / Elytron credential store (implemented via `jwt.key.source` + Elytron or config JWK)
 Acceptance criteria:
-- Auth code flow with PKCE works end-to-end
-- MFA enrollment + login works
-- Rate limiting in place (e.g., 5 attempts/15 min/IP)
+- Auth code flow with PKCE works end-to-end (implemented)
+- MFA enrollment + login works (implemented)
+- Rate limiting in place (e.g., 5 attempts/15 min/IP) (implemented on login endpoints)
+Next steps:
+- Enable Redis in `src/main/resources/META-INF/microprofile-config.properties` and set:
+  - `redis.enabled=true`, `session.store=redis`, `rate.limit.store=redis`
+- Configure Elytron credential store (or inject `jwt.key.jwk` from Vault) and set `jwt.key.source`.
+- Add integration tests for MFA, rate limiting, and Redis-backed sessions.
 
 #### Phase 3 — API gateway & ABAC (Weeks 5–6)
 Deliverables:
