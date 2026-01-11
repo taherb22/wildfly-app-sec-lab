@@ -27,8 +27,14 @@ public class JwtAuthenticationFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         String path = requestContext.getUriInfo().getPath();
         
-        // Skip authentication for login and register endpoints
-        if (path.contains("/auth/login") || path.contains("/auth/register")) {
+        // Skip authentication for public endpoints (login, register, OAuth flow, MFA, dev seed)
+        if (path.contains("/auth/login") || 
+            path.contains("/auth/register") || 
+            path.contains("/dev/seed") ||
+            path.contains("/authorize") ||
+            path.contains("/login/authorization") ||
+            path.contains("/oauth/token") ||
+            path.contains("/mfa/")) {
             return;
         }
 

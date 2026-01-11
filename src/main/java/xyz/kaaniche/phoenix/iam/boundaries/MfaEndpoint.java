@@ -41,6 +41,11 @@ public class MfaEndpoint {
                     .build();
         }
         Identity identity = phoenixIAMRepository.findIdentityByUsername(username);
+        if (identity == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of("error", "user not found"))
+                    .build();
+        }
         if (!Argon2Utility.check(identity.getPassword(), password.toCharArray())) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(Map.of("error", "invalid credentials"))
@@ -84,6 +89,11 @@ public class MfaEndpoint {
                     .build();
         }
         Identity identity = phoenixIAMRepository.findIdentityByUsername(username);
+        if (identity == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of("error", "user not found"))
+                    .build();
+        }
         if (!Argon2Utility.check(identity.getPassword(), password.toCharArray())) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(Map.of("error", "invalid credentials"))

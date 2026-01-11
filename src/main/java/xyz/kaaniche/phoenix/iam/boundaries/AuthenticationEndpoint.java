@@ -166,15 +166,21 @@ public class AuthenticationEndpoint {
         }
         RateLimiter.RateLimitResult rateLimit = rateLimiter.check("oauth-login:" + RequestUtil.clientIp(request));
         if (!rateLimit.allowed()) {
-            return informUserAboutError("too_many_requests : retry after " + rateLimit.retryAfterSeconds() + " seconds", Response.Status.TOO_MANY_REQUESTS)
-                    .header("Retry-After", rateLimit.retryAfterSeconds())
-                    .build();
+            return informUserAboutErrorBuilder(
+                "too_many_requests : retry after " + rateLimit.retryAfterSeconds() + " seconds",
+                Response.Status.TOO_MANY_REQUESTS)
+                .header("Retry-After", rateLimit.retryAfterSeconds())
+                .build();
         }
         LoginSession session = loginSessionStore.get(cookie.getValue()).orElse(null);
         if (session == null) {
             return informUserAboutError("invalid_request : expired sign-in context");
         }
         Identity identity = phoenixIAMRepository.findIdentityByUsername(username);
+        if (identity == null) {
+            logger.info("Identity not found for username: " + username);
+            return informUserAboutError("invalid_request : user not found");
+        }
         if(Argon2Utility.check(identity.getPassword(),password.toCharArray())){
             logger.info("Authenticated identity:"+username);
             if (identity.isTotpEnabled()) {
@@ -299,6 +305,23 @@ public class AuthenticationEndpoint {
                 </body>
                 </html>
                 """.formatted(error)).build();
+    }
+
+    private Response.ResponseBuilder informUserAboutErrorBuilder(String error, Response.Status status) {
+        return Response.status(status).entity("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8"/>
+                    <title>Error</title>
+                </head>
+                <body>
+                <aside class="container">
+                    <p>%s</p>
+                </aside>
+                </body>
+                </html>
+                """.formatted(error));
     }
 
     private boolean isValidState(String state) {

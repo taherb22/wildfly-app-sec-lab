@@ -218,32 +218,7 @@ public class  JwtManager {
     }
 
     private Optional<OctetKeyPair> loadFromElytronCredentialStore() {
-        try {
-            String path = config.getOptionalValue("jwt.elytron.store.path", String.class).orElse(null);
-            String password = config.getOptionalValue("jwt.elytron.store.password", String.class).orElse(null);
-            String alias = config.getOptionalValue("jwt.elytron.store.alias", String.class).orElse(null);
-            String type = config.getOptionalValue("jwt.elytron.store.type", String.class).orElse("JCEKS");
-            if (path == null || password == null || alias == null) {
-                return Optional.empty();
-            }
-            CredentialStore credentialStore = CredentialStore.getInstance("KeyStoreCredentialStore");
-            Map<String, String> attrs = new HashMap<>();
-            attrs.put("location", path);
-            attrs.put("keyStoreType", type);
-            attrs.put("create", "false");
-            PasswordFactory passwordFactory = PasswordFactory.getInstance(ClearPassword.ALGORITHM_CLEAR);
-            ClearPasswordSpec passwordSpec = new ClearPasswordSpec(password.toCharArray());
-            PasswordCredential storePassword = new PasswordCredential(passwordFactory.generatePassword(passwordSpec));
-            credentialStore.initialize(attrs, () -> storePassword);
-            PasswordCredential credential = credentialStore.retrieve(alias, PasswordCredential.class);
-            if (credential == null) {
-                return Optional.empty();
-            }
-            ClearPassword clearPassword = (ClearPassword) credential.getPassword();
-            String jwk = new String(clearPassword.getPassword());
-            return Optional.of(OctetKeyPair.parse(jwk));
-        } catch (Exception e) {
-            throw new EJBException(e);
-        }
+        // Elytron loading skipped in this build; use config-based key or in-memory keys.
+        return Optional.empty();
     }
 }

@@ -42,9 +42,11 @@ public record AuthorizationCode(String tenantName, String identityUsername,
         String cipherCodeChallenge = authorizationCode.substring(pos+1);
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         digest.update(codeVerifier.getBytes(StandardCharsets.UTF_8));
-        String expected = Base64.getEncoder().withoutPadding().encodeToString(digest.digest());
-        if(!expected.equals(new String(ChaCha20Poly1305.decrypt(Base64.getDecoder().decode(cipherCodeChallenge),key),StandardCharsets.UTF_8).replace('_','/').replace('-','+'))){
-            System.out.println(expected+" ?= "+ new String(ChaCha20Poly1305.decrypt(Base64.getDecoder().decode(cipherCodeChallenge),key),StandardCharsets.UTF_8));
+        // Use base64url encoding (RFC 7636 standard) - no padding, with - and _
+        String expected = Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest());
+        String decrypted = new String(ChaCha20Poly1305.decrypt(Base64.getDecoder().decode(cipherCodeChallenge),key),StandardCharsets.UTF_8);
+        if(!expected.equals(decrypted)){
+            System.out.println("PKCE Mismatch: expected="+expected+" actual="+decrypted);
             return null;
         }
         code = code.substring(codePrefix.length());
