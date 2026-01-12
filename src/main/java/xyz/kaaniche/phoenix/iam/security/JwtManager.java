@@ -18,6 +18,12 @@ import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.wildfly.security.credential.PasswordCredential;
+import org.wildfly.security.credential.store.CredentialStore;
+import org.wildfly.security.password.PasswordFactory;
+import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.password.spec.ClearPasswordSpec;
+
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -40,9 +46,16 @@ public class  JwtManager {
     private final List<String> audiences = config.getValues("jwt.audiences",String.class);
     private final String claimRoles = config.getValue("jwt.claim.roles",String.class);
     private final OctetKeyPairGenerator keyPairGenerator = new OctetKeyPairGenerator(Curve.Ed25519);
+    private final String keySource = config.getOptionalValue("jwt.key.source", String.class).orElse("memory");
+    private OctetKeyPair externalKeyPair;
 
     @PostConstruct
     public void start(){
+        if (isExternalKeySource()) {
+            externalKeyPair = loadExternalKey()
+                    .orElseThrow(() -> new EJBException("Unable to load external JWT signing key"));
+            return;
+        }
         while (cachedKeyPairs.size()<keyPairCacheSize){
             cachedKeyPairs.add(generateKeyPair());
         }
@@ -103,11 +116,19 @@ public class  JwtManager {
     public Optional<JWT> validateJWT(String token){
         try {
             SignedJWT parsed = SignedJWT.parse(token);
-            OctetKeyPair publicKey = cachedKeyPairs.stream()
-                    .filter(kp -> kp.getKeyID().equals(parsed.getHeader().getKeyID()))
-                    .findFirst()
-                    .orElseThrow(()->new EJBException("Unable to retrieve the key pair associated with the kid"))
-                    .toPublicJWK();
+            OctetKeyPair publicKey;
+            if (isExternalKeySource()) {
+                if (externalKeyPair == null || !externalKeyPair.getKeyID().equals(parsed.getHeader().getKeyID())) {
+                    return Optional.empty();
+                }
+                publicKey = externalKeyPair.toPublicJWK();
+            } else {
+                publicKey = cachedKeyPairs.stream()
+                        .filter(kp -> kp.getKeyID().equals(parsed.getHeader().getKeyID()))
+                        .findFirst()
+                        .orElseThrow(()->new EJBException("Unable to retrieve the key pair associated with the kid"))
+                        .toPublicJWK();
+            }
             JWSVerifier verifier = new Ed25519Verifier(publicKey);
             if(parsed.verify(verifier)){
                 if(parsed.getJWTClaimsSet().getExpirationTime().toInstant().isBefore(Instant.now())){
@@ -122,6 +143,12 @@ public class  JwtManager {
     }
 
     public OctetKeyPair getPublicValidationKey(String kid){
+        if (isExternalKeySource()) {
+            if (externalKeyPair != null && externalKeyPair.getKeyID().equals(kid)) {
+                return externalKeyPair.toPublicJWK();
+            }
+            throw new EJBException("Unable to retrieve the key pair associated with the kid");
+        }
         return cachedKeyPairs.stream()
                 .filter(kp -> kp.getKeyID().equals(kid))
                 .findFirst()
@@ -153,6 +180,9 @@ public class  JwtManager {
     }
 
     private Optional<OctetKeyPair> getKeyPair(){
+        if (isExternalKeySource()) {
+            return Optional.ofNullable(externalKeyPair);
+        }
         cachedKeyPairs.removeIf(this::isPublicKeyExpired);
         while(cachedKeyPairs.stream().filter(this::hasNotExpired).count()<keyPairCacheSize) {
             cachedKeyPairs.add(generateKeyPair());
@@ -162,5 +192,33 @@ public class  JwtManager {
 
     public String getClaimRoles() {
         return claimRoles;
+    }
+
+    private boolean isExternalKeySource() {
+        return "elytron".equalsIgnoreCase(keySource) || "config".equalsIgnoreCase(keySource) || "vault".equalsIgnoreCase(keySource);
+    }
+
+    private Optional<OctetKeyPair> loadExternalKey() {
+        if ("elytron".equalsIgnoreCase(keySource)) {
+            return loadFromElytronCredentialStore();
+        }
+        return loadFromConfig();
+    }
+
+    private Optional<OctetKeyPair> loadFromConfig() {
+        Optional<String> jwk = config.getOptionalValue("jwt.key.jwk", String.class);
+        if (jwk.isEmpty() || jwk.get().isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(OctetKeyPair.parse(jwk.get()));
+        } catch (ParseException e) {
+            throw new EJBException(e);
+        }
+    }
+
+    private Optional<OctetKeyPair> loadFromElytronCredentialStore() {
+        // Elytron loading skipped in this build; use config-based key or in-memory keys.
+        return Optional.empty();
     }
 }

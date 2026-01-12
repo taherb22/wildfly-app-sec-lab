@@ -1,0 +1,91 @@
++ set -euo pipefail
++ BASE_URL=http://localhost:8080/phoenix-iam
++ REDIRECT_URI=http://localhost/callback
++ CLIENT_ID=TENANT_TEST
++ USERNAME=john
++ PASSWORD='SecurePass123!'
++ SCOPE='openid profile'
++ echo '=== Phase 2 OAuth 2.1 + PKCE Flow Test ==='
+=== Phase 2 OAuth 2.1 + PKCE Flow Test ===
++ echo 'Base URL: http://localhost:8080/phoenix-iam'
+Base URL: http://localhost:8080/phoenix-iam
++ echo
+
++ echo '[1/6] Seeding test data...'
+[1/6] Seeding test data...
+++ curl -s -X POST http://localhost:8080/phoenix-iam/rest-iam/dev/seed
++ SEED_RESPONSE='could not execute statement [Unique index or primary key violation: "PUBLIC.CONSTRAINT_INDEX_D ON PUBLIC.TENANTS(TENANT_ID NULLS FIRST) VALUES ( /* 1 */ '\''TENANT_TEST'\'' )"; SQL statement:
+insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default) [23505-224]] [insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default)]'
++ echo 'could not execute statement [Unique index or primary key violation: "PUBLIC.CONSTRAINT_INDEX_D ON PUBLIC.TENANTS(TENANT_ID NULLS FIRST) VALUES ( /* 1 */ '\''TENANT_TEST'\'' )"; SQL statement:
+insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default) [23505-224]] [insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default)]'
++ jq .
++ echo 'could not execute statement [Unique index or primary key violation: "PUBLIC.CONSTRAINT_INDEX_D ON PUBLIC.TENANTS(TENANT_ID NULLS FIRST) VALUES ( /* 1 */ '\''TENANT_TEST'\'' )"; SQL statement:
+insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default) [23505-224]] [insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default)]'
+could not execute statement [Unique index or primary key violation: "PUBLIC.CONSTRAINT_INDEX_D ON PUBLIC.TENANTS(TENANT_ID NULLS FIRST) VALUES ( /* 1 */ 'TENANT_TEST' )"; SQL statement:
+insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default) [23505-224]] [insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default)]
++ echo
+
++ echo '[2/6] Generating PKCE code_verifier and code_challenge...'
+[2/6] Generating PKCE code_verifier and code_challenge...
+++ openssl rand -base64 64
+++ tr -d =+/
+++ cut -c1-64
++ CODE_VERIFIER='bL6lvUyorkC84Lc0wJqAjZghIJbmTSVQEhk80d8aSX2nHEmwQzlnZc03v1QTpj
+QjwXt37t1ECNc16T4aKw'
+++ printf %s 'bL6lvUyorkC84Lc0wJqAjZghIJbmTSVQEhk80d8aSX2nHEmwQzlnZc03v1QTpj
+QjwXt37t1ECNc16T4aKw'
+++ openssl dgst -sha256 -binary
+++ openssl base64
+++ tr +/ -_
+++ tr -d =
++ CODE_CHALLENGE=Cqz6tX2mups3DqN-XWWqdPGlOgwqVxSf0BX5bZHPST8
+++ openssl rand -base64 32
+++ tr -d =+/
+++ cut -c1-32
++ STATE=gdRSRo5K2AeTYzQ3zE1YodYn7ll26VhD
++ echo 'code_verifier: bL6lvUyorkC84Lc0wJqAjZghIJbmTSVQEhk80d8aSX2nHEmwQzlnZc03v1QTpj
+QjwXt37t1ECNc16T4aKw'
+code_verifier: bL6lvUyorkC84Lc0wJqAjZghIJbmTSVQEhk80d8aSX2nHEmwQzlnZc03v1QTpj
+QjwXt37t1ECNc16T4aKw
++ echo 'code_challenge: Cqz6tX2mups3DqN-XWWqdPGlOgwqVxSf0BX5bZHPST8'
+code_challenge: Cqz6tX2mups3DqN-XWWqdPGlOgwqVxSf0BX5bZHPST8
++ echo 'state: gdRSRo5K2AeTYzQ3zE1YodYn7ll26VhD'
+state: gdRSRo5K2AeTYzQ3zE1YodYn7ll26VhD
++ echo
+
++ echo '[3/6] Requesting authorization (GET /authorize)...'
+[3/6] Requesting authorization (GET /authorize)...
+++ printf %s http://localhost/callback
+++ jq -sRr @uri
+++ printf %s 'openid profile'
+++ jq -sRr @uri
++ AUTHORIZE_URL='http://localhost:8080/phoenix-iam/authorize?client_id=TENANT_TEST&redirect_uri=http%3A%2F%2Flocalhost%2Fcallback&response_type=code&scope=openid%20profile&state=gdRSRo5K2AeTYzQ3zE1YodYn7ll26VhD&code_challenge_method=S256&code_challenge=Cqz6tX2mups3DqN-XWWqdPGlOgwqVxSf0BX5bZHPST8'
+++ curl -s -i -c /tmp/cookies.txt 'http://localhost:8080/phoenix-iam/authorize?client_id=TENANT_TEST&redirect_uri=http%3A%2F%2Flocalhost%2Fcallback&response_type=code&scope=openid%20profile&state=gdRSRo5K2AeTYzQ3zE1YodYn7ll26VhD&code_challenge_method=S256&code_challenge=Cqz6tX2mups3DqN-XWWqdPGlOgwqVxSf0BX5bZHPST8'
++ AUTHORIZE_RESPONSE='HTTP/1.1 404 Not Found
+Connection: keep-alive
+Content-Type: text/html;charset=UTF-8
+Content-Length: 68
+Date: Sun, 11 Jan 2026 12:08:26 GMT
+
+<html><head><title>Error</title></head><body>Not Found</body></html>'
+++ echo 'HTTP/1.1 404 Not Found
+Connection: keep-alive
+Content-Type: text/html;charset=UTF-8
+Content-Length: 68
+Date: Sun, 11 Jan 2026 12:08:26 GMT
+
+<html><head><title>Error</title></head><body>Not Found</body></html>'
+++ head -n1
+++ awk '{print $2}'
++ HTTP_STATUS=404
+++ echo 'HTTP/1.1 404 Not Found
+Connection: keep-alive
+Content-Type: text/html;charset=UTF-8
+Content-Length: 68
+Date: Sun, 11 Jan 2026 12:08:26 GMT
+
+<html><head><title>Error</title></head><body>Not Found</body></html>'
+++ grep -i 'set-cookie: signInId='
+++ sed 's/.*signInId=\([^;]*\).*/\1/'
+++ head -n1
++ COOKIE=
