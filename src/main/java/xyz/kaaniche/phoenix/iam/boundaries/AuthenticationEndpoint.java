@@ -2,7 +2,7 @@ package xyz.kaaniche.phoenix.iam.boundaries;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-
+import com.google.common.html.HtmlEscapers;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
@@ -79,11 +79,11 @@ public class AuthenticationEndpoint {
         //1. Check tenant
         String clientId = params.getFirst("client_id");
         if (clientId == null || clientId.isEmpty()) {
-            return informUserAboutError("Invalid client_id :" + clientId);
+             return informUserAboutError("you should provide client_id");
         }
         Tenant tenant = phoenixIAMRepository.findTenantByName(clientId);
         if (tenant == null) {
-            return informUserAboutError("Invalid client_id :" + clientId);
+             return informUserAboutError("Invalid cred"); //remove info leakage about tenant existence
         }
         //2. Client Authorized Grant Type
         if (tenant.getSupportedGrantTypes() != null && !tenant.getSupportedGrantTypes().contains("authorization_code")) {
@@ -177,10 +177,10 @@ public class AuthenticationEndpoint {
             return informUserAboutError("invalid_request : expired sign-in context");
         }
         Identity identity = phoenixIAMRepository.findIdentityByUsername(username);
-        if (identity == null) {
-            logger.info("Identity not found for username: " + username);
-            return informUserAboutError("invalid_request : user not found");
-        }
+        if (identity == null || !Argon2Utility.check(identity.getPassword(), password.toCharArray())) {//check if the identity is Null to prevent server error (prevent NPE)
+        logger.info("Failure when authenticating identity:" + username);
+         return informUserAboutError("User doesn't approved the request."); 
+           }      
         if(Argon2Utility.check(identity.getPassword(),password.toCharArray())){
             logger.info("Authenticated identity:"+username);
             if (identity.isTotpEnabled()) {
@@ -291,6 +291,7 @@ public class AuthenticationEndpoint {
     }
 
     private Response informUserAboutError(String error, Response.Status status) {
+        String safe = HtmlEscapers.htmlEscaper().escape(error); //  prevent XSS attacks by escaping user-provided content
         return Response.status(status).entity("""
                 <!DOCTYPE html>
                 <html>
@@ -304,7 +305,7 @@ public class AuthenticationEndpoint {
                 </aside>
                 </body>
                 </html>
-                """.formatted(error)).build();
+                """.formatted(safe)).build();
     }
 
     private Response.ResponseBuilder informUserAboutErrorBuilder(String error, Response.Status status) {
