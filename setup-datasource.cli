@@ -9,17 +9,8 @@ catch
 end-try
 
 # Add H2 datasource for development
-/subsystem=datasources/data-source=PhoenixDS:add( \
-    jndi-name=java:jboss/datasources/PhoenixDS, \
-    driver-name=h2, \
-    connection-url=jdbc:h2:mem:phoenixdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE, \
-    user-name=sa, \
-    password=sa, \
-    use-ccm=true, \
-    max-pool-size=25, \
-    blocking-timeout-wait-millis=5000, \
-    enabled=true \
-)
+/subsystem=datasources/data-source=PhoenixDS:add(jndi-name=java:jboss/datasources/PhoenixDS,driver-name=h2,connection-url="jdbc:h2:mem:phoenixdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",user-name=sa,password=sa,use-ccm=true,max-pool-size=25,blocking-timeout-wait-millis=5000,enabled=true)
+
 
 echo "PhoenixDS datasource configured successfully"
 
