@@ -38,12 +38,30 @@ public class JwtService {
     @PostConstruct
     public void init() {
         try {
-            privateKey = loadPrivateKeyFromEnv();
-            publicKey = loadPublicKeyFromEnv();
+            // Check if keys are provided in environment variables
+            String privateKeyEnv = System.getenv("JWT_PRIVATE_KEY");
+            String publicKeyEnv = System.getenv("JWT_PUBLIC_KEY");
+            
+            if (privateKeyEnv != null && !privateKeyEnv.isBlank() && 
+                publicKeyEnv != null && !publicKeyEnv.isBlank()) {
+                // Load keys from environment
+                privateKey = loadPrivateKeyFromEnv();
+                publicKey = loadPublicKeyFromEnv();
+                LOGGER.info("JwtService initialized with RSA keys from environment");
+            } else {
+                // Generate keys automatically
+                LOGGER.info("JWT keys not found in environment, generating new RSA key pair...");
+                java.security.KeyPairGenerator keyGen = java.security.KeyPairGenerator.getInstance("RSA");
+                keyGen.initialize(2048);
+                java.security.KeyPair keyPair = keyGen.generateKeyPair();
+                privateKey = (RSAPrivateKey) keyPair.getPrivate();
+                publicKey = (RSAPublicKey) keyPair.getPublic();
+                LOGGER.info("JwtService initialized with auto-generated RSA keys");
+            }
+            
             expirationMinutes = config.getOptionalValue("jwt.expiration.minutes", Integer.class)
                     .orElse(60);
 
-            LOGGER.info("JwtService initialized with RSA keys from env");
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize JwtService", e);
         }

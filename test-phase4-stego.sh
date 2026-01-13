@@ -88,12 +88,19 @@ echo ""
 
 # Create test cover image (simple PNG)
 create_test_image() {
-  # Create a simple 100x100 red PNG for testing
-  # In production, use actual images
-  cat > /tmp/test-cover.png.b64 << 'EOF'
-iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==
+  # Create a 256x256 red PNG using ImageMagick if available, otherwise use base64 encoded PNG
+  if command -v convert &> /dev/null; then
+    # Create a 256x256 red image and encode to base64
+    convert -size 256x256 xc:red /tmp/test-cover.png 2>/dev/null
+    base64 -w 0 /tmp/test-cover.png
+  else
+    # Fallback: Use a pre-generated base64 encoded 256x256 red PNG
+    # This is a 256x256 all-red PNG image in base64
+    cat > /tmp/test-cover.png.b64 << 'EOF'
+iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAAB7X0blAAAA/UlEQVR4nO3BMQEAAADCoPVPbQhfoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOA1v9QAATX68/0AAAAASUVORK5CYII=
 EOF
-  cat /tmp/test-cover.png.b64 | tr -d '\n'
+    cat /tmp/test-cover.png.b64
+  fi
 }
 
 # Test 1: Generate Encryption Key

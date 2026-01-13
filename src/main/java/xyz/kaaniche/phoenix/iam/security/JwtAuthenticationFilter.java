@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Provider
+//@Provider  // Disabled - ResourceServerFilter is used instead
 @Priority(Priorities.AUTHENTICATION)
 public class JwtAuthenticationFilter implements ContainerRequestFilter {
 
