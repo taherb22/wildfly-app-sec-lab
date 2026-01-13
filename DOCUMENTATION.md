@@ -570,25 +570,25 @@ DOMPurify XSS Protection
   + Script injection attempts fully neutralized
 
 Architecture
-src/main/webapp/
-├── index.html
-├── app.js
-├── sw.js
-├── manifest.json
-├── style.css
-├── components/
-│   ├── app-shell.js
-│   ├── login-view.js
-│   ├── register-view.js
-│   └── user-view.js
-├── services/
-│   └── offline-queue.js
-├── utils/
-│   ├── sanitize.js
-│   └── storage.js
-└── lib/
-    ├── lit.js
-    └── purify.es.js
+    src/main/webapp/
+    ├── index.html
+    ├── app.js
+    ├── sw.js
+    ├── manifest.json
+    ├── style.css
+    ├── components/
+    │   ├── app-shell.js
+    │   ├── login-view.js
+    │   ├── register-view.js
+    │   └── user-view.js
+    ├── services/
+    │   └── offline-queue.js
+    ├── utils/
+    │   ├── sanitize.js
+    │   └── storage.js
+    └── lib/
+        ├── lit.js
+        └── purify.es.js
 
 Manual Security Validation
   + Offline mode does not expose tokens
