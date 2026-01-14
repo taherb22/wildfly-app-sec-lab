@@ -15,7 +15,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.logging.Logger;
 
-@ApplicationPath("/rest-iam")
+@ApplicationPath("/api")
 public class IamApplication extends Application {
     @ApplicationScoped
     public static final class CDIConfigurator {

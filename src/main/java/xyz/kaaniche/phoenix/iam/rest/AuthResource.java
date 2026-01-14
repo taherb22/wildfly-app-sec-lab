@@ -1,6 +1,7 @@
 package xyz.kaaniche.phoenix.iam.rest;
 
 import jakarta.inject.Inject;
+import jakarta.json.JsonObject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -43,7 +44,7 @@ public class AuthResource {
 
     @POST
     @Path("/login")
-    public Response login(Map<String, String> credentials, @Context HttpServletRequest request) {
+    public Response login(JsonObject credentials, @Context HttpServletRequest request) {
         try {
             RateLimiter.RateLimitResult rateLimit = rateLimiter.check("api-login:" + RequestUtil.clientIp(request));
             if (!rateLimit.allowed()) {
@@ -56,8 +57,8 @@ public class AuthResource {
                         .header("Retry-After", rateLimit.retryAfterSeconds())
                         .build();
             }
-            String username = credentials.get("username");
-            String password = credentials.get("password");
+            String username = credentials.getString("username", null);
+            String password = credentials.getString("password", null);
 
             LOGGER.info("Login attempt for user: " + username);
 
@@ -69,17 +70,49 @@ public class AuthResource {
 
             if (userService.authenticate(username, password)) {
                 User user = userService.findByUsername(username).orElseThrow();
-                if (user.isTotpEnabled()) {
-                    String totp = credentials.get("totp");
-                    if (totp == null || !totpService.verifyCode(user.getTotpSecret(), totp)) {
-                        return Response.status(Response.Status.UNAUTHORIZED)
-                                .entity(Map.of("error", "mfa_required", "error_description", "valid totp code required"))
-                                .build();
-                    }
+                
+                // ===== MFA ENFORCEMENT: MANDATORY FOR ALL USERS =====
+                // Per FINAL TECHNICAL SPEC: Phase 2 requires "Multi-factor authentication with TOTP-based 2FA enrollment"
+                
+                String totp = credentials.getString("totp", null);
+                
+                // If user hasn't enrolled TOTP yet, return error requiring enrollment
+                if (user.getTotpSecret() == null || user.getTotpSecret().isBlank()) {
+                    LOGGER.warning("User " + username + " attempted login without MFA enrollment");
+                    return Response.status(Response.Status.FORBIDDEN)
+                            .entity(Map.of(
+                                "error", "mfa_enrollment_required", 
+                                "error_description", "MFA (TOTP) must be enrolled before login",
+                                "action", "POST /api/auth/mfa/enroll"
+                            ))
+                            .build();
                 }
+                
+                // If TOTP secret exists, TOTP code is MANDATORY
+                if (totp == null || totp.isBlank()) {
+                    LOGGER.info("User " + username + " provided password but missing TOTP code");
+                    return Response.status(Response.Status.UNAUTHORIZED)
+                            .entity(Map.of(
+                                "error", "mfa_required", 
+                                "error_description", "TOTP code is required"
+                            ))
+                            .build();
+                }
+                
+                // Verify the TOTP code
+                if (!totpService.verifyCode(user.getTotpSecret(), totp)) {
+                    LOGGER.warning("User " + username + " provided invalid TOTP code");
+                    return Response.status(Response.Status.UNAUTHORIZED)
+                            .entity(Map.of(
+                                "error", "invalid_totp", 
+                                "error_description", "Invalid or expired TOTP code"
+                            ))
+                            .build();
+                }
+                
                 userService.updateLastLogin(user.getId());
                 
-                LOGGER.info("User authenticated, generating token for: " + username);
+                LOGGER.info("User authenticated with MFA, generating token for: " + username);
                 
                 String token = jwtService.generateToken(username, user.getRoles());
                 
@@ -107,11 +140,11 @@ public class AuthResource {
 
     @POST
     @Path("/register")
-    public Response register(Map<String, String> userData) {
+    public Response register(JsonObject userData) {
         try {
-            String username = userData.get("username");
-            String email = userData.get("email");
-            String password = userData.get("password");
+            String username = userData.getString("username", null);
+            String email = userData.getString("email", null);
+            String password = userData.getString("password", null);
 
             if (username == null || email == null || password == null) {
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -139,9 +172,9 @@ public class AuthResource {
 
     @POST
     @Path("/mfa/enroll")
-    public Response enrollTotp(Map<String, String> payload) {
-        String username = payload.get("username");
-        String password = payload.get("password");
+    public Response enrollTotp(JsonObject payload) {
+        String username = payload.getString("username", null);
+        String password = payload.getString("password", null);
         if (username == null || password == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "Username and password required"))
@@ -180,10 +213,10 @@ public class AuthResource {
 
     @POST
     @Path("/mfa/verify")
-    public Response verifyTotp(Map<String, String> payload) {
-        String username = payload.get("username");
-        String password = payload.get("password");
-        String code = payload.get("code");
+    public Response verifyTotp(JsonObject payload) {
+        String username = payload.getString("username", null);
+        String password = payload.getString("password", null);
+        String code = payload.getString("code", null);
         if (username == null || password == null || code == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "Username, password and code required"))

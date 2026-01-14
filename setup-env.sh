@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Find WildFly installation
-if [ -d "/opt/wildfly" ]; then
+if [ -d "$HOME/wildfly-38.0.0.Final" ]; then
+    export WILDFLY_HOME="$HOME/wildfly-38.0.0.Final"
+elif [ -d "/opt/wildfly" ]; then
     export WILDFLY_HOME="/opt/wildfly"
 elif [ -d "$HOME/wildfly" ]; then
     export WILDFLY_HOME="$HOME/wildfly"

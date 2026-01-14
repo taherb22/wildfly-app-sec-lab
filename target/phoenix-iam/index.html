@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phoenix IAM</title>
+
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./style.css" />
+
+  <!-- DOMPurify local copy -->
+  <script type="module" src="./lib/purify.es.js"></script>
+  <script type="module" src="./lib/lit.js"></script>
+
+
+  <!-- App shell -->
+  <script type="module" src="./components/app-shell.js"></script>
+
+  <!-- CSP Header -->
+<meta http-equiv="Content-Security-Policy"
+  content="
+    default-src 'self';
+    style-src 'self' 'unsafe-inline';
+    connect-src 'self';
+    object-src 'none';
+    form-action 'self';
+  "
+>
+</head>
+
+<body>
+  <app-shell></app-shell>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

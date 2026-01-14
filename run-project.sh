@@ -7,10 +7,12 @@ echo ""
 
 # Check if WildFly is installed
 if [ -z "$WILDFLY_HOME" ]; then
-    if [ -d "$HOME/wildfly" ]; then
+    if [ -d "$HOME/wildfly-38.0.0.Final" ]; then
+        export WILDFLY_HOME="$HOME/wildfly-38.0.0.Final"
+    elif [ -d "$HOME/wildfly" ]; then
         export WILDFLY_HOME="$HOME/wildfly"
     else
-        echo "Error: WILDFLY_HOME not set and WildFly not found in $HOME/wildfly"
+        echo "Error: WILDFLY_HOME not set and WildFly not found in $HOME/wildfly-38.0.0.Final"
         echo "Please run: ./install-wildfly.sh"
         exit 1
     fi
