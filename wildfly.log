@@ -11,44 +11,10 @@
 =========================================================================
 
 Unable to read the logging configuration from 'file:/c/Users/moham/wildfly/standalone/configuration/logging.properties' (java.io.FileNotFoundException: \c\Users\moham\wildfly\standalone\configuration\logging.properties (Le chemin d’accès spécifié est introuvable))
-21:30:36,760 INFO  [org.jboss.as.mail.extension] (MSC service thread 1-7) WFLYMAIL0001: Bound mail session [java:jboss/mail/Default]
-21:30:36,807 ERROR [org.jboss.msc.service.fail] (MSC service thread 1-2) MSC000001: Failed to start service org.wildfly.undertow.listener.default: org.jboss.msc.service.StartException in service org.wildfly.undertow.listener.default: Address already in use: bind /127.0.0.1:8080
-	at org.wildfly.extension.undertow@31.0.0.Final//org.wildfly.extension.undertow.ListenerService.start(ListenerService.java:195)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1617)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1580)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$ControllerTask.run(ServiceControllerImpl.java:1438)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1990)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1486)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1377)
-	at java.base/java.lang.Thread.run(Thread.java:842)
-
-21:30:36,807 ERROR [org.jboss.msc.service.fail] (MSC service thread 1-5) MSC000001: Failed to start service org.wildfly.undertow.listener.https: org.jboss.msc.service.StartException in service org.wildfly.undertow.listener.https: Address already in use: bind /127.0.0.1:8443
-	at org.wildfly.extension.undertow@31.0.0.Final//org.wildfly.extension.undertow.ListenerService.start(ListenerService.java:195)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1617)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1580)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$ControllerTask.run(ServiceControllerImpl.java:1438)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1990)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1486)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1377)
-	at java.base/java.lang.Thread.run(Thread.java:842)
-
-21:30:36,852 ERROR [org.jboss.msc.service.fail] (MSC service thread 1-8) MSC000001: Failed to start service org.wildfly.management.http.extensible: org.jboss.msc.service.StartException in service org.wildfly.management.http.extensible: java.net.BindException: Address already in use: bind /127.0.0.1:9990
-	at org.jboss.as.server@23.0.1.Final//org.jboss.as.server.mgmt.UndertowHttpManagementService.start(UndertowHttpManagementService.java:412)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1617)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1580)
-	at org.jboss.msc@1.5.2.Final//org.jboss.msc.service.ServiceControllerImpl$ControllerTask.run(ServiceControllerImpl.java:1438)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1990)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1486)
-	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1377)
-	at java.base/java.lang.Thread.run(Thread.java:842)
-
-21:30:36,886 INFO  [org.jboss.as.ejb3] (MSC service thread 1-6) WFLYEJB0493: Jakarta Enterprise Beans subsystem suspension complete
-21:30:36,966 INFO  [org.jboss.as.connector.subsystems.datasources] (MSC service thread 1-5) WFLYJCA0001: Bound data source [java:jboss/datasources/ExampleDS]
-21:30:36,966 INFO  [org.jboss.as.connector.subsystems.datasources] (MSC service thread 1-7) WFLYJCA0001: Bound data source [java:jboss/datasources/PhoenixDS]
-21:30:37,728 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
+01:53:51,749 INFO  [org.jboss.as.ejb3] (MSC service thread 1-5) WFLYEJB0493: Jakarta Enterprise Beans subsystem suspension complete
+01:53:51,818 INFO  [org.jboss.as.connector.subsystems.datasources] (MSC service thread 1-6) WFLYJCA0001: Bound data source [java:jboss/datasources/ExampleDS]
+01:53:51,819 INFO  [org.jboss.as.connector.subsystems.datasources] (MSC service thread 1-2) WFLYJCA0001: Bound data source [java:jboss/datasources/PhoenixDS]
+01:53:53,116 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
     ("core-service" => "management"),
     ("management-interface" => "http-interface")
 ]) - failure description: {
@@ -56,25 +22,25 @@ Unable to read the logging configuration from 'file:/c/Users/moham/wildfly/stand
     "WFLYCTL0412: Required services that are not installed:" => ["jboss.http-upgrade-registry.http-management"],
     "WFLYCTL0180: Services with missing/unavailable dependencies" => ["service jboss.remoting.remoting-http-upgrade-service.http-management is missing [jboss.http-upgrade-registry.http-management]"]
 }
-21:30:37,729 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
+01:53:53,117 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
     ("subsystem" => "remoting"),
     ("http-connector" => "http-remoting-connector")
 ]) - failure description: {
     "WFLYCTL0412: Required services that are not installed:" => ["jboss.http-upgrade-registry.default"],
     "WFLYCTL0180: Services with missing/unavailable dependencies" => ["service jboss.remoting.remoting-http-upgrade-service.http-remoting-connector is missing [jboss.http-upgrade-registry.default]"]
 }
-21:30:37,774 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
+01:53:53,163 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
     ("subsystem" => "undertow"),
     ("server" => "default-server"),
     ("http-listener" => "default")
 ]) - failure description: {"WFLYCTL0080: Failed services" => {"jboss.undertow.listener.default" => "Address already in use: bind /127.0.0.1:8080"}}
-21:30:37,775 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
+01:53:53,163 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
     ("subsystem" => "undertow"),
     ("server" => "default-server"),
     ("https-listener" => "https")
 ]) - failure description: {"WFLYCTL0080: Failed services" => {"org.wildfly.undertow.listener.https" => "Address already in use: bind /127.0.0.1:8443"}}
-21:30:37,776 ERROR [org.jboss.as.controller] (Controller Boot Thread) WFLYCTL0459: Triggering roll back due to missing management services.
-21:30:37,776 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
+01:53:53,164 ERROR [org.jboss.as.controller] (Controller Boot Thread) WFLYCTL0459: Triggering roll back due to missing management services.
+01:53:53,165 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
     ("core-service" => "management"),
     ("management-interface" => "http-interface")
 ]) - failure description: {

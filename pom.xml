@@ -1,9 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>xyz.kaaniche.phoenix</groupId>
     <artifactId>phoenix-iam</artifactId>
     <version>1.0.0</version>
@@ -16,7 +14,6 @@
     </properties>
 
     <dependencies>
-
         <!-- Jakarta EE APIs (provided by WildFly) -->
         <dependency>
             <groupId>jakarta.platform</groupId>
@@ -24,15 +21,6 @@
             <version>11.0.0</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- JSP API (REQUIRED for dynamic nonce injection) -->
-        <dependency>
-            <groupId>jakarta.servlet.jsp</groupId>
-            <artifactId>jakarta.servlet.jsp-api</artifactId>
-            <version>3.1.1</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- MicroProfile Config -->
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
@@ -40,57 +28,79 @@
             <version>3.0</version>
             <scope>provided</scope>
         </dependency>
-
         <!-- Argon2 for password hashing -->
         <dependency>
             <groupId>de.mkammerer</groupId>
             <artifactId>argon2-jvm</artifactId>
             <version>2.11</version>
         </dependency>
-
-        <!-- Nimbus JOSE JWT -->
+        <!-- Nimbus JOSE JWT for JWT handling -->
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
             <version>9.37.3</version>
         </dependency>
-
-        <!-- MQTT -->
+        <!-- Eclipse Paho MQTT v5 Client -->
         <dependency>
             <groupId>org.eclipse.paho</groupId>
             <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
             <version>1.2.5</version>
         </dependency>
-
-        <!-- Google Tink -->
+        <!-- Google Tink for encryption -->
         <dependency>
             <groupId>com.google.crypto.tink</groupId>
             <artifactId>tink</artifactId>
             <version>1.12.0</version>
         </dependency>
-
-        <!-- Test dependencies -->
+        <!-- Redis client -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>5.1.2</version>
+        </dependency>
+        <!-- Base32 for TOTP secrets -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.16.0</version>
+        </dependency>
+        <!-- QR generation for TOTP enrollment -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <!-- Elytron credential store (provided by WildFly) -->
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron</artifactId>
+            <version>2.4.1.Final</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- SmallRye Config for MicroProfile Config in tests -->
         <dependency>
             <groupId>io.smallrye.config</groupId>
             <artifactId>smallrye-config</artifactId>
             <version>3.4.4</version>
             <scope>test</scope>
         </dependency>
-
+        <!-- JUnit for testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.9.3</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>32.1.2-jre</version>
+</dependency>
     </dependencies>
 
     <build>
         <finalName>phoenix-iam</finalName>
-
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -100,7 +110,6 @@
                     <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
@@ -109,8 +118,6 @@
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
-
 </project>
