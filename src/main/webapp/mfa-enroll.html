@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Phoenix IAM - Enable 2FA</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card mfa-card">
+            <div class="logo">🔐</div>
+            <h1>Enable Two-Factor Authentication</h1>
+            <p class="subtitle">Secure your account with TOTP 2FA</p>
+
+            <div id="enrollment-steps">
+                <div id="step-qr" class="enrollment-step active">
+                    <h3>Step 1: Scan QR Code</h3>
+                    <p>Use Google Authenticator, Authy, or Microsoft Authenticator:</p>
+                    <div id="qr-container"></div>
+                    <div class="secret-box">
+                        <p><strong>Manual entry:</strong></p>
+                        <code id="totp-secret"></code>
+                        <button type="button" id="copy-secret" class="secondary-btn">Copy Secret</button>
+                    </div>
+                    <button type="button" id="btn-next" class="login-btn">Next: Verify Code</button>
+                </div>
+
+                <div id="step-verify" class="enrollment-step">
+                    <h3>Step 2: Verify Code</h3>
+                    <p>Enter the 6-digit code from your authenticator app:</p>
+                    <form id="verify-form">
+                        <div class="form-group">
+                            <input type="text" id="totp-code" placeholder="000000" maxlength="6" pattern="[0-9]{6}" required autocomplete="one-time-code" style="text-align: center; font-size: 24px; letter-spacing: 8px; font-family: monospace;">
+                        </div>
+                        <button type="submit" class="login-btn">Verify & Enable 2FA</button>
+                        <button type="button" id="btn-back" class="secondary-btn">Back</button>
+                    </form>
+                    <div id="verify-error" class="error-message" style="display: none;"></div>
+                </div>
+
+                <div id="step-success" class="enrollment-step">
+                    <div style="font-size: 48px; text-align: center; color: #4CAF50; margin: 20px 0;">✓</div>
+                    <h3>2FA Enabled Successfully!</h3>
+                    <p>Your account is now protected with two-factor authentication.</p>
+                    <button type="button" id="btn-continue" class="login-btn">Continue to Login</button>
+                </div>
+            </div>
+
+            <div id="loading" style="display: none; text-align: center; padding: 20px;">
+                <p>Processing...</p>
+            </div>
+
+            <div id="error-message" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="js/mfa-enroll.js"></script>
+</body>
+</html>

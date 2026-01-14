@@ -1,35 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Phoenix IAM</title>
-
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="stylesheet" href="./style.css" />
-
-  <!-- DOMPurify local copy -->
-  <script type="module" src="./lib/purify.es.js"></script>
-  <script type="module" src="./lib/lit.js"></script>
-
-
-  <!-- App shell -->
-  <script type="module" src="./components/app-shell.js"></script>
-
-  <!-- CSP Header -->
-<meta http-equiv="Content-Security-Policy"
-  content="
-    default-src 'self';
-    style-src 'self' 'unsafe-inline';
-    connect-src 'self';
-    object-src 'none';
-    form-action 'self';
-  "
->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>�� Phoenix IAM</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
 </head>
-
 <body>
-  <app-shell></app-shell>
-  <script type="module" src="./app.js"></script>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">🔐</div>
+            <h1>Phoenix IAM</h1>
+            <p class="subtitle">Welcome back! Please login to continue.</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your username" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+
+                <div class="form-group" id="totp-group" style="display: none;">
+                    <label for="totp">Authenticator Code</label>
+                    <input type="text" id="totp" placeholder="000000" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" style="text-align: center; font-size: 20px; letter-spacing: 5px;">
+                    <small>Enter the 6-digit code from your authenticator app</small>
+                </div>
+
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+
+            <div id="error-message" class="error-message" style="display: none;"></div>
+
+            <div class="footer">
+                <p>Don't have an account?</p>
+                <button type="button" id="toggleFormBtn" class="create-account-btn">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
 </body>
 </html>
