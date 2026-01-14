@@ -1,0 +1,17 @@
+=== Phase 2 OAuth 2.1 + PKCE Flow Test ===
+Base URL: http://localhost:8080/phoenix-iam
+
+[1/6] Seeding test data...
+could not execute statement [Unique index or primary key violation: "PUBLIC.CONSTRAINT_INDEX_D ON PUBLIC.TENANTS(TENANT_ID NULLS FIRST) VALUES ( /* 1 */ 'TENANT_TEST' )"; SQL statement:
+insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default) [23505-224]] [insert into tenants (allowed_roles,tenant_id,redirect_uri,required_scopes,tenant_secret,supported_grant_types,id) values (?,?,?,?,?,?,default)]
+
+[2/6] Generating PKCE code_verifier and code_challenge...
+code_verifier: 2moEEkfy8LPMIWKsjJX8pmTfl8v3IrDUYaWiSSBPLzBaI55l5kctIJvoWdA2gQ8L
+code_challenge: mZ_aGA3qCKrfTg0G1fPCWfQ-EpmyY0F9IM7Fl1s5-p0
+state: mHwjwXz0KZY07RezFs7DXpwHGb4xR6zo
+
+[3/6] Requesting authorization (GET /authorize)...
+Session cookie: signInId=b0f04e97-a3ed-4517-9c3b-ad13c1c8af72
+HTTP Status: 200
+
+[4/6] Submitting login credentials...

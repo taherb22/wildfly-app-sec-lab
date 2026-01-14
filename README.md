@@ -110,6 +110,36 @@ Response:
 }
 ```
 
+#### Enroll MFA (TOTP)
+```http
+POST /api/auth/mfa/enroll
+Content-Type: application/json
+
+{
+  "username": "john",
+  "password": "SecurePass123!"
+}
+
+Response:
+{
+  "secret": "BASE32SECRET",
+  "otpauth_uri": "otpauth://totp/...",
+  "qr_data_uri": "data:image/svg+xml;base64,..."
+}
+```
+
+#### Verify MFA (TOTP)
+```http
+POST /api/auth/mfa/verify
+Content-Type: application/json
+
+{
+  "username": "john",
+  "password": "SecurePass123!",
+  "code": "123456"
+}
+```
+
 ### Protected Endpoints (Require JWT)
 
 #### Get All Users
@@ -139,6 +169,18 @@ Configuration is managed via MicroProfile Config in:
 # JWT Configuration
 jwt.secret=phoenix-iam-secret-key-minimum-32-characters-for-hs256-algorithm
 jwt.expiration.minutes=60
+
+# Redis + sessions + rate limiting (set redis.enabled=true to use Redis)
+redis.enabled=false
+session.store=memory
+rate.limit.store=redis
+
+# JWT key source (memory | config | elytron | vault)
+jwt.key.source=memory
+jwt.key.jwk=
+jwt.elytron.store.path=
+jwt.elytron.store.password=
+jwt.elytron.store.alias=
 
 # MQTT Configuration (optional)
 mqtt.broker.url=tcp://localhost:1883

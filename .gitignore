@@ -1,13 +1,3 @@
 # Ignore Windows Zone.Identifier alternate data streams surfaced as files.
 *:Zone.Identifier
-# Maven
-target/
-*.class
 
-# Logs
-*.log
-
-# IDE
-.idea/
-.vscode/
-*.iml

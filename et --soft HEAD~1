@@ -1,0 +1,23 @@
+[33m977be8c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmohamed-affes[m[33m)[m HEAD@{0}: commit: chore: ignore build artifacts and remove target from repo
+[33m45eba04[m[33m ([m[1;31morigin/mohamed-affes[m[33m)[m HEAD@{1}: reset: moving to HEAD
+[33m45eba04[m[33m ([m[1;31morigin/mohamed-affes[m[33m)[m HEAD@{2}: reset: moving to HEAD
+[33m45eba04[m[33m ([m[1;31morigin/mohamed-affes[m[33m)[m HEAD@{3}: commit: Sync branch with main: replace wildfly.log, setup-datasource.cli, pom.xml
+[33m3c44ca5[m HEAD@{4}: checkout: moving from mohamed-affes to mohamed-affes
+[33m3c44ca5[m HEAD@{5}: commit: Update branch with main working files for testing before merge
+[33mee71e49[m HEAD@{6}: reset: moving to HEAD
+[33mee71e49[m HEAD@{7}: checkout: moving from mohamed-affes to mohamed-affes
+[33mee71e49[m HEAD@{8}: commit: Sync branch config with main to fix build and deployment issues
+[33m3da840f[m HEAD@{9}: checkout: moving from mohamed-affes to mohamed-affes
+[33m3da840f[m HEAD@{10}: checkout: moving from mohamed-affes to mohamed-affes
+[33m3da840f[m HEAD@{11}: reset: moving to origin/mohamed-affes
+[33m6c47eff[m HEAD@{12}: commit (merge): Merge origin/main into mohamed-affes, resolve pom.xml and setup-datasource.cli conflicts
+[33m3da840f[m HEAD@{13}: checkout: moving from mohamed-affes to mohamed-affes
+[33m3da840f[m HEAD@{14}: checkout: moving from mohamed-affes to mohamed-affes
+[33m3da840f[m HEAD@{15}: checkout: moving from main to mohamed-affes
+[33m51ed10d[m[33m ([m[1;32mmain[m[33m)[m HEAD@{16}: checkout: moving from mohamed-affes to main
+[33m3da840f[m HEAD@{17}: commit: Phase 5 PWA frontend: offline support, CSP, DOMPurify
+[33mb7087db[m HEAD@{18}: checkout: moving from mohamed-affes to mohamed-affes
+[33mb7087db[m HEAD@{19}: commit: Phase 5 PWA frontend: offline support, CSP, DOMPurify
+[33m51ed10d[m[33m ([m[1;32mmain[m[33m)[m HEAD@{20}: checkout: moving from main to mohamed-affes
+[33m51ed10d[m[33m ([m[1;32mmain[m[33m)[m HEAD@{21}: checkout: moving from main to main
+[33m51ed10d[m[33m ([m[1;32mmain[m[33m)[m HEAD@{22}: clone: from https://github.com/taherb22/wildfly-app-sec-lab.git
